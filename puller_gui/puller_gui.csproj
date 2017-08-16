@@ -85,6 +85,10 @@
       <Project>{c3a5d5fa-3773-4cba-98ed-4ddb32a90aa3}</Project>
       <Name>downloader_lib</Name>
     </ProjectReference>
+    <ProjectReference Include="..\UtilsLib\UtilsLib.csproj">
+      <Project>{f48666be-77e0-4367-a582-437d0b1d9936}</Project>
+      <Name>UtilsLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

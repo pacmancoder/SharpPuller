@@ -51,9 +51,9 @@ namespace downloader_lib
             return files_[id].Name;
         }
 
-        public string GetFileSize(int id)
+        public long GetFileSize(int id)
         {
-            return files_[id].Size.ToString();
+            return files_[id].Size;
         }
         public long GetFileDownloadedSize(int id)
         {
@@ -112,6 +112,25 @@ namespace downloader_lib
                 }
                 return true;
             }
+        }
+
+        public List<int> GetFileIdList()
+        {
+            var list = new List<int>();
+            foreach (var file in files_)
+            {
+                list.Add(file.Key);
+            }
+            return list;
+        }
+
+        public string GetFileDownloadSpeed(int id)
+        {
+            return ""; // TODO: speed
+        }
+        public double GetFileProgress(int id)
+        {
+            return files_[id].Progress;
         }
     }
 }

@@ -30,9 +30,14 @@ namespace puller_gui
         public void AddFileToList(int id, string fileName, string size)
         {
             var row = new ListViewItem(fileName);
-            row.SubItems.Add(size);
+            row.SubItems.Add(size); // size
+            row.SubItems.Add("0 B"); // downloaded size
+            row.SubItems.Add("0 B/s"); // speed
+            row.SubItems.Add("0 %"); // progress
+            row.SubItems.Add("In queue"); // status
             row.Tag = id;
             pendingFilesList.Items.Add(row);
+            fileIdToListIndex.Add(id, pendingFilesList.Items.Count - 1);
         }
 
         public void RemoveFileFromList(int id)
@@ -41,10 +46,20 @@ namespace puller_gui
             {
                 if ((int) pendingFilesList.Items[i].Tag == id)
                 {
-                    pendingFilesList.Items.RemoveAt(i);
+                    pendingFilesList.Items.RemoveAt(i);                    
                     break;
                 }
             }
+            fileIdToListIndex.Remove(id);
+        }
+
+        public void ModifyFileListItem(int id, string downloadedSize, string speed, string progress, string status)
+        {
+            var listItem = pendingFilesList.Items[fileIdToListIndex[id]];
+            listItem.SubItems[2].Text = downloadedSize;
+            listItem.SubItems[3].Text = speed;
+            listItem.SubItems[4].Text = progress;
+            listItem.SubItems[5].Text = status;
         }
 
         public void SetStatus(string message)
@@ -155,5 +170,7 @@ namespace puller_gui
                 presenter_.RemoveFile((int)item.Tag);
             }
         }
+
+        Dictionary<int, int> fileIdToListIndex = new Dictionary<int, int>();
     }
 }

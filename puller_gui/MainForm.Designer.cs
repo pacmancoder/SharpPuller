@@ -42,7 +42,11 @@
             this.pendingFilesList = new System.Windows.Forms.ListView();
             this.fileListHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.sizeListHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.downloadedSizeListheader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.speedListHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.progressListHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.progressTimer = new System.Windows.Forms.Timer(this.components);
+            this.statusListHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.filesListContextMenu.SuspendLayout();
             this.mainStatusStrip.SuspendLayout();
             this.SuspendLayout();
@@ -60,12 +64,12 @@
             // 
             this.newFileTextBox.Location = new System.Drawing.Point(12, 130);
             this.newFileTextBox.Name = "newFileTextBox";
-            this.newFileTextBox.Size = new System.Drawing.Size(626, 20);
+            this.newFileTextBox.Size = new System.Drawing.Size(880, 20);
             this.newFileTextBox.TabIndex = 2;
             // 
             // addFileButton
             // 
-            this.addFileButton.Location = new System.Drawing.Point(644, 128);
+            this.addFileButton.Location = new System.Drawing.Point(898, 128);
             this.addFileButton.Name = "addFileButton";
             this.addFileButton.Size = new System.Drawing.Size(78, 23);
             this.addFileButton.TabIndex = 3;
@@ -78,12 +82,12 @@
             this.filesListContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.removeToolStripMenuItem});
             this.filesListContextMenu.Name = "filesListContextMenu";
-            this.filesListContextMenu.Size = new System.Drawing.Size(153, 48);
+            this.filesListContextMenu.Size = new System.Drawing.Size(118, 26);
             // 
             // removeToolStripMenuItem
             // 
             this.removeToolStripMenuItem.Name = "removeToolStripMenuItem";
-            this.removeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.removeToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
             this.removeToolStripMenuItem.Text = "Remove";
             this.removeToolStripMenuItem.Click += new System.EventHandler(this.removeToolStripMenuItem_Click);
             // 
@@ -93,7 +97,7 @@
             this.statusLabel});
             this.mainStatusStrip.Location = new System.Drawing.Point(0, 253);
             this.mainStatusStrip.Name = "mainStatusStrip";
-            this.mainStatusStrip.Size = new System.Drawing.Size(732, 22);
+            this.mainStatusStrip.Size = new System.Drawing.Size(987, 22);
             this.mainStatusStrip.TabIndex = 5;
             this.mainStatusStrip.Text = "statusStrip1";
             // 
@@ -129,19 +133,23 @@
             this.downloadProgressBar.Location = new System.Drawing.Point(12, 157);
             this.downloadProgressBar.Maximum = 1000;
             this.downloadProgressBar.Name = "downloadProgressBar";
-            this.downloadProgressBar.Size = new System.Drawing.Size(710, 52);
+            this.downloadProgressBar.Size = new System.Drawing.Size(964, 52);
             this.downloadProgressBar.TabIndex = 7;
             // 
             // pendingFilesList
             // 
             this.pendingFilesList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.fileListHeader,
-            this.sizeListHeader});
+            this.sizeListHeader,
+            this.downloadedSizeListheader,
+            this.speedListHeader,
+            this.progressListHeader,
+            this.statusListHeader});
             this.pendingFilesList.ContextMenuStrip = this.filesListContextMenu;
             this.pendingFilesList.FullRowSelect = true;
             this.pendingFilesList.Location = new System.Drawing.Point(12, 29);
             this.pendingFilesList.Name = "pendingFilesList";
-            this.pendingFilesList.Size = new System.Drawing.Size(708, 97);
+            this.pendingFilesList.Size = new System.Drawing.Size(962, 97);
             this.pendingFilesList.TabIndex = 8;
             this.pendingFilesList.UseCompatibleStateImageBehavior = false;
             this.pendingFilesList.View = System.Windows.Forms.View.Details;
@@ -149,23 +157,43 @@
             // fileListHeader
             // 
             this.fileListHeader.Text = "File";
-            this.fileListHeader.Width = 589;
+            this.fileListHeader.Width = 300;
             // 
             // sizeListHeader
             // 
             this.sizeListHeader.Text = "Size";
-            this.sizeListHeader.Width = 115;
+            this.sizeListHeader.Width = 100;
+            // 
+            // downloadedSizeListheader
+            // 
+            this.downloadedSizeListheader.Text = "Downloaded Size";
+            this.downloadedSizeListheader.Width = 100;
+            // 
+            // speedListHeader
+            // 
+            this.speedListHeader.Text = "Speed";
+            this.speedListHeader.Width = 100;
+            // 
+            // progressListHeader
+            // 
+            this.progressListHeader.Text = "Progress";
+            this.progressListHeader.Width = 100;
             // 
             // progressTimer
             // 
             this.progressTimer.Interval = 500;
             this.progressTimer.Tick += new System.EventHandler(this.progressTimer_Tick);
             // 
+            // statusListHeader
+            // 
+            this.statusListHeader.Text = "Status";
+            this.statusListHeader.Width = 200;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(732, 275);
+            this.ClientSize = new System.Drawing.Size(987, 275);
             this.Controls.Add(this.pendingFilesList);
             this.Controls.Add(this.downloadProgressBar);
             this.Controls.Add(this.stopButton);
@@ -201,6 +229,10 @@
         private System.Windows.Forms.ColumnHeader fileListHeader;
         private System.Windows.Forms.ColumnHeader sizeListHeader;
         private System.Windows.Forms.Timer progressTimer;
+        private System.Windows.Forms.ColumnHeader downloadedSizeListheader;
+        private System.Windows.Forms.ColumnHeader speedListHeader;
+        private System.Windows.Forms.ColumnHeader progressListHeader;
+        private System.Windows.Forms.ColumnHeader statusListHeader;
     }
 }
 

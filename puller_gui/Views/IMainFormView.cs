@@ -17,6 +17,7 @@ namespace puller_gui.Views
     {
         void AddFileToList(int id, string fileName, string size);
         void RemoveFileFromList(int id);
+        void ModifyFileListItem(int id, string downloadedSize, string speed, string progress, string status);
         void SetStatus(string message);
         void ShowError(string caption, string message);
         void ShowMessage(string caption, string message);

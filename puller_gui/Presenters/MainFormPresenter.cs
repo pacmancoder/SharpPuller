@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using puller_gui.Views;
 using downloader_lib;
+using UtilsLib;
 
 namespace puller_gui.Presenters
 {
@@ -25,7 +26,7 @@ namespace puller_gui.Presenters
                 view_.AddFileToList(
                     fileId,
                     downloadManager.GetFileName(fileId),
-                    downloadManager.GetFileSize(fileId));
+                    UtilsLib.Utils.GetHumanReadableSize(downloadManager.GetFileSize(fileId)));
             }
             // other errors
             catch (Exception e)
@@ -61,6 +62,18 @@ namespace puller_gui.Presenters
         public void CheckProgress()
         {
             view_.ShowProgress((int)(downloadManager.GetOverallProgress() * 1000));
+
+            var fileIds = downloadManager.GetFileIdList();
+            foreach (int id in fileIds)
+            {
+                view_.ModifyFileListItem(
+                    id,
+                    Utils.GetHumanReadableSize(downloadManager.GetFileDownloadedSize(id)),
+                    downloadManager.GetFileDownloadSpeed(id),
+                    Utils.GetHumanReadableProgress(downloadManager.GetFileProgress(id)),
+                    downloadManager.GetFileStatus(id));
+            }
+                        
             if (downloadManager.AllDownloadsFinished)
             {
                 ProcessDownloadFinished();
