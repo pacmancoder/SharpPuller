@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UtilsLib;
 
 namespace downloader_lib
 {
@@ -19,34 +20,54 @@ namespace downloader_lib
         public static int PROGRESS_MAX = 1000;
         public static int BLOCK_SIZE = 4096;
 
+        private static string tempExtension = ".part";
+
         private string url_;
         private string name_;
         AsyncFileDownloader downloader_;
 
-        public FileWrapper(string url, string destFolder)
+        string tempLocalPath;
+        string localPath;
+
+        public FileWrapper(string url, string destPath)
         {
-            name_ = null;
+            name_ = Utils.ExtractFileName(destPath, "\\");
             url_ = url;
-            downloader_ = new AsyncFileDownloader(url, destFolder + "/" + Name, BLOCK_SIZE);
+
+            tempLocalPath = destPath + tempExtension;
+            localPath = destPath;
+
+            downloader_ = new AsyncFileDownloader(url, tempLocalPath, BLOCK_SIZE);
         }
 
-        public string url
+        public string FileName
+        {
+            get
+            {
+                return name_;
+            }
+        }
+
+        public string FilePath
+        {
+            get
+            {
+                if (Status == FileStatus.DOWNLOADED)
+                {
+                    return localPath;
+                }
+                else
+                {
+                    return tempLocalPath;
+                }
+            }
+        }
+
+        public string Url
         {
             get
             {
                 return url_;
-            }
-        }
-
-        public string Name
-        {
-            get
-            {
-                if (name_ == null)
-                {
-                    name_ = url_.Substring(url.LastIndexOf('/') + 1);
-                }
-                return name_;
             }
         }
 
@@ -88,12 +109,26 @@ namespace downloader_lib
             downloader_.Pause();
         }
 
+        public long DownloadSpeed
+        {
+            get
+            {
+                return downloader_.DownloadSpeed;
+            }
+        }
+
         public FileStatus Status
         {
             get
             {
                 if (downloader_.Finished)
                 {
+                    if (System.IO.File.Exists(tempLocalPath))
+                    {
+                        System.IO.File.Move(tempLocalPath, localPath);
+                        // TODO: if dest found - rename!
+                    }
+
                     return FileStatus.DOWNLOADED;
                 }
                 else if (downloader_.DownloadInProgress)

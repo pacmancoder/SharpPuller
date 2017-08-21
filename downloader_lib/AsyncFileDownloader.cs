@@ -23,6 +23,74 @@ namespace downloader_lib
         private long fileSize_;
         private long downloadedSize_;
 
+        private const int TIMESTAMPS_COUNT = 8;
+        private long[] speedTimestamps_;
+        private int speedTimestampsHead_;
+        private long prevDownloadedSize;
+        private long prevTimeMeasure;
+
+        public AsyncFileDownloader(string url, string destPath, int blockSize)
+        {
+            allowedToRun_ = true;
+            downloadInProgress_ = false;
+            downloadStarted_ = false;
+
+            url_ = url;
+            destPath_ = destPath;
+            blockSize_ = blockSize;
+            fileSize_ = GetFileSize();
+
+            DownloadedSize = 0;
+
+            prevDownloadedSize = -1;
+            prevTimeMeasure = -1;
+            speedTimestamps_ = new long[TIMESTAMPS_COUNT];
+            speedTimestampsHead_ = 0;
+        }
+
+        private int RingBufferIndex(int index)
+        {
+            return index % TIMESTAMPS_COUNT;
+        }
+
+        public long DownloadSpeed
+        {
+            get
+            {
+                if (prevDownloadedSize  < 0)
+                {
+                    prevDownloadedSize = DownloadedSize;
+                    prevTimeMeasure = DateTime.Now.Ticks;
+                }
+
+                long timeDelta = DateTime.Now.Ticks - prevTimeMeasure;
+                long sizeDelta = DownloadedSize - prevDownloadedSize;
+
+                if (timeDelta == 0)
+                {
+                    speedTimestamps_[RingBufferIndex(speedTimestampsHead_++)] = 0;
+                } else
+                {
+                    speedTimestamps_[RingBufferIndex(speedTimestampsHead_++)] = (long) (
+                        (double) sizeDelta /
+                        (timeDelta / (double)TimeSpan.TicksPerSecond));
+                }
+
+                double sum = 0;
+                for (int i = 0; i < TIMESTAMPS_COUNT; i++)
+                {
+                    // For avoiding overflow: (x + y) / 2 == (x / 2) + (y / 2);
+                    sum += speedTimestamps_[RingBufferIndex(i + speedTimestampsHead_)] / (double) TIMESTAMPS_COUNT;
+                }
+
+                prevDownloadedSize = DownloadedSize;
+                prevTimeMeasure = DateTime.Now.Ticks;
+
+                return (long) sum;
+            }
+        }
+
+
         public long DownloadedSize
         {
             get
@@ -64,20 +132,6 @@ namespace downloader_lib
             {
                 return downloadStarted_;
             }
-        }
-
-        public AsyncFileDownloader(string url, string destPath, int blockSize)
-        {
-            allowedToRun_ = true;
-            downloadInProgress_ = false;
-            downloadStarted_ = false;
-
-            url_ = url;
-            destPath_ = destPath;
-            blockSize_ = blockSize;
-            fileSize_ = GetFileSize();
-
-            DownloadedSize = 0;
         }
 
         private long GetFileSize()

@@ -69,7 +69,7 @@ namespace puller_gui.Presenters
                 view_.ModifyFileListItem(
                     id,
                     Utils.GetHumanReadableSize(downloadManager.GetFileDownloadedSize(id)),
-                    downloadManager.GetFileDownloadSpeed(id),
+                    Utils.GetHumanReadableSpeed(downloadManager.GetFileDownloadSpeed(id)),
                     Utils.GetHumanReadableProgress(downloadManager.GetFileProgress(id)),
                     downloadManager.GetFileStatus(id));
             }

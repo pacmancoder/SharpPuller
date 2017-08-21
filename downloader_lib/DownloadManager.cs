@@ -5,11 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using UtilsLib;
+
 namespace downloader_lib
 {
     public class DownloadManager
     {
-        private string downloadPath_;
+        private string downloadFolder_;
 
         private Dictionary<int, FileWrapper> files_;
         private int nextId_;
@@ -17,16 +19,57 @@ namespace downloader_lib
         public DownloadManager()
         {
             // Get user's downloads folder path
-            downloadPath_ = Registry.GetValue(
+            downloadFolder_ = Registry.GetValue(
                 @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
                 "{374DE290-123F-4565-9164-39C4925E467B}", "Downloads").ToString();
             nextId_ = 0;
             files_ = new Dictionary<int, FileWrapper>();
         }
 
+        private bool FileAlreadyAdded(string url)
+        {
+            foreach (var file in files_)
+            {
+                if (file.Value.Url == url)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public int AddFile(string url)
         {
-            files_.Add(nextId_, new FileWrapper(url, downloadPath_));
+            if (FileAlreadyAdded(url))
+            {
+                // TODO: specific exception
+                throw new ApplicationException("File already added!");
+            }
+
+            string defaultPath = downloadFolder_ + "\\" + Utils.ExtractFileName(url, "/");
+            // TODO: check filename for incorrect symbols, replace with underscores !!!
+            string resultPath = defaultPath;
+            int fileSuffix = 1;
+            while (System.IO.File.Exists(resultPath))
+            {
+                int separatorPos;
+                if (defaultPath.LastIndexOf('.') > defaultPath.LastIndexOf('\\'))
+                {
+                    separatorPos = defaultPath.LastIndexOf('.');
+                }
+                else
+                {
+                    separatorPos = defaultPath.Length - 1;
+                }
+
+                resultPath = 
+                    defaultPath.Substring(0, separatorPos) +
+                    $" ({fileSuffix})" +
+                    defaultPath.Substring(separatorPos, defaultPath.Length - separatorPos);
+            }
+
+
+            files_.Add(nextId_, new FileWrapper(url, resultPath));
             return nextId_++;
         }
 
@@ -48,7 +91,12 @@ namespace downloader_lib
 
         public string GetFileName(int id)
         {
-            return files_[id].Name;
+            return files_[id].FileName;
+        }
+
+        public string GetFilePath(int id)
+        {
+            return files_[id].FilePath;
         }
 
         public long GetFileSize(int id)
@@ -124,10 +172,11 @@ namespace downloader_lib
             return list;
         }
 
-        public string GetFileDownloadSpeed(int id)
+        public long GetFileDownloadSpeed(int id)
         {
-            return ""; // TODO: speed
+            return files_[id].DownloadSpeed;
         }
+
         public double GetFileProgress(int id)
         {
             return files_[id].Progress;

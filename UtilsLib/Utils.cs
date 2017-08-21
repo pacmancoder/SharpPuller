@@ -18,6 +18,11 @@ namespace UtilsLib
             return String.Format("{0:0.##} {1}", size, sizes[order]);
         }
 
+        public static string GetHumanReadableSpeed(long speedInBytesPerSecond)
+        {
+            return GetHumanReadableSize(speedInBytesPerSecond) + "/s";
+        }
+
         public static string GetHumanReadableProgress(double progress)
         {
             if (progress < 0.0)
@@ -25,7 +30,12 @@ namespace UtilsLib
             else if (progress > 100.0)
                 return "100 %";
             else
-                return ((int)(progress * 100)).ToString();
+                return ((int)(progress * 100)).ToString() + " %";
+        }
+
+        public static string ExtractFileName(string path, string separator)
+        {
+            return path.Substring(path.LastIndexOf(separator) + 1);
         }
     }
 }
