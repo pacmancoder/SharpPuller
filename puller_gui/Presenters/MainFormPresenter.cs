@@ -9,9 +9,13 @@ using UtilsLib;
 
 namespace puller_gui.Presenters
 {
-    class MainFormPresenter
+    class MainFormPresenter : IMainFormPresenter
     {
-        DownloadManager downloadManager = new DownloadManager();
+
+        public MainFormPresenter(IDownloadManager downloadManager)
+        {
+            downloadManager_ = downloadManager;
+        }
 
         public void HookView(Views.IMainFormView view)
         {
@@ -22,11 +26,11 @@ namespace puller_gui.Presenters
         {
             try
             {
-                int fileId = downloadManager.AddFile(url);
+                int fileId = downloadManager_.AddFile(url);
                 view_.AddFileToList(
                     fileId,
-                    downloadManager.GetFileName(fileId),
-                    UtilsLib.Utils.GetHumanReadableSize(downloadManager.GetFileSize(fileId)));
+                    downloadManager_.GetFileName(fileId),
+                    UtilsLib.Utils.GetHumanReadableSize(downloadManager_.GetFileSize(fileId)));
             }
             // other errors
             catch (Exception e)
@@ -37,13 +41,13 @@ namespace puller_gui.Presenters
 
         public void RemoveFile(int fileId)
         {
-            downloadManager.RemoveFile(fileId);
+            downloadManager_.RemoveFile(fileId);
             view_.RemoveFileFromList(fileId);
         }
 
         public void StartDownload()
         {
-            downloadManager.StartDownload();
+            downloadManager_.StartDownload();
             view_.SetStatus("Downloading...");
             view_.SetProgressTimerState(true);
             view_.SetButtonState(MainFormButton.Start, false);
@@ -52,7 +56,7 @@ namespace puller_gui.Presenters
 
         public void PauseDownload()
         {
-            downloadManager.PauseDownload();
+            downloadManager_.PauseDownload();
             view_.SetStatus("Paused");
             view_.SetProgressTimerState(false);
             view_.SetButtonState(MainFormButton.Start, true);
@@ -61,20 +65,19 @@ namespace puller_gui.Presenters
 
         public void CheckProgress()
         {
-            view_.ShowProgress((int)(downloadManager.GetOverallProgress() * 1000));
+            view_.ShowProgress((int)(downloadManager_.OverallProgress * 1000));
 
-            var fileIds = downloadManager.GetFileIdList();
-            foreach (int id in fileIds)
+            foreach (int id in downloadManager_.FileIdList)
             {
                 view_.ModifyFileListItem(
                     id,
-                    Utils.GetHumanReadableSize(downloadManager.GetFileDownloadedSize(id)),
-                    Utils.GetHumanReadableSpeed(downloadManager.GetFileDownloadSpeed(id)),
-                    Utils.GetHumanReadableProgress(downloadManager.GetFileProgress(id)),
-                    downloadManager.GetFileStatus(id));
+                    Utils.GetHumanReadableSize(downloadManager_.GetFileDownloadedSize(id)),
+                    Utils.GetHumanReadableSpeed(downloadManager_.GetFileDownloadSpeed(id)),
+                    Utils.GetHumanReadableProgress(downloadManager_.GetFileProgress(id)),
+                    downloadManager_.GetFileStatus(id));
             }
                         
-            if (downloadManager.AllDownloadsFinished)
+            if (downloadManager_.AllDownloadsFinished)
             {
                 ProcessDownloadFinished();
             }
@@ -90,5 +93,6 @@ namespace puller_gui.Presenters
         }
 
         Views.IMainFormView view_;
+        IDownloadManager downloadManager_;
     }
 }

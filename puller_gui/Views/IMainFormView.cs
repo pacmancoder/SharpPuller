@@ -13,7 +13,7 @@ namespace puller_gui.Views
         Add,
     }
 
-    interface IMainFormView
+    public interface IMainFormView
     {
         void AddFileToList(int id, string fileName, string size);
         void RemoveFileFromList(int id);

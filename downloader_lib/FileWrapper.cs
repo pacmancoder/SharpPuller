@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
 using UtilsLib;
 
 namespace downloader_lib
@@ -15,29 +11,34 @@ namespace downloader_lib
         DOWNLOADED,
     }
 
+    enum PauseType
+    {
+        Relaxed,
+        Forced,
+    }
+
     class FileWrapper
     {
-        public static int PROGRESS_MAX = 1000;
-        public static int BLOCK_SIZE = 4096;
-
         private static string tempExtension = ".part";
 
         private string url_;
         private string name_;
-        AsyncFileDownloader downloader_;
 
         string tempLocalPath;
         string localPath;
 
-        public FileWrapper(string url, string destPath)
+        IAsyncDownloader downloader_;
+        IFileSystem fileSystem_;
+
+        public FileWrapper(IAsyncDownloader downloader, IFileSystem fileSystem)
         {
-            name_ = Utils.ExtractFileName(destPath, "\\");
-            url_ = url;
+            url_ = downloader.Url;
+            localPath = downloader.DestPath;
+            tempLocalPath = localPath + tempExtension;
+            name_ = Path.GetFileName(localPath);
 
-            tempLocalPath = destPath + tempExtension;
-            localPath = destPath;
-
-            downloader_ = new AsyncFileDownloader(url, tempLocalPath, BLOCK_SIZE);
+            downloader_ = downloader;
+            fileSystem_ = fileSystem;
         }
 
         public string FileName
@@ -104,9 +105,14 @@ namespace downloader_lib
             downloader_.Start();
         }
 
-        public void PauseDownload()
+        public void PauseDownload(PauseType pauseType)
         {
             downloader_.Pause();
+
+            if (pauseType == PauseType.Forced)
+            {
+                downloader_.Join();
+            }
         }
 
         public long DownloadSpeed
@@ -123,10 +129,9 @@ namespace downloader_lib
             {
                 if (downloader_.Finished)
                 {
-                    if (System.IO.File.Exists(tempLocalPath))
+                    if (fileSystem_.Exists(tempLocalPath))
                     {
-                        System.IO.File.Move(tempLocalPath, localPath);
-                        // TODO: if dest found - rename!
+                        fileSystem_.Move(tempLocalPath, Utils.GenerateUniqueFileName(localPath));
                     }
 
                     return FileStatus.DOWNLOADED;

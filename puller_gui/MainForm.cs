@@ -14,14 +14,22 @@ namespace puller_gui
 {
     public partial class MainForm : Form, Views.IMainFormView
     {
-        public MainForm()
+
+        private class FileListRowTag
+        {
+            public int fileId;
+            public int listIndex;
+        }
+
+        public MainForm(Presenters.IMainFormPresenter presenter)
         {
             InitializeComponent();
+
+            presenter_ = presenter;
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            presenter_ = new Presenters.MainFormPresenter();
             presenter_.HookView(this);
         }
 
@@ -35,31 +43,43 @@ namespace puller_gui
             row.SubItems.Add("0 B/s"); // speed
             row.SubItems.Add("0 %"); // progress
             row.SubItems.Add("In queue"); // status
-            row.Tag = id;
             pendingFilesList.Items.Add(row);
+
+            row.Tag = new FileListRowTag { fileId = id, listIndex = pendingFilesList.Items.Count - 1 };
             fileIdToListIndex.Add(id, pendingFilesList.Items.Count - 1);
         }
 
         public void RemoveFileFromList(int id)
         {
+            var rowIndex = -1;
             for (int i = 0; i < pendingFilesList.Items.Count; i++)
             {
-                if ((int) pendingFilesList.Items[i].Tag == id)
+                var rowInfo = (FileListRowTag) pendingFilesList.Items[i].Tag;
+                if (rowInfo.fileId == id)
                 {
-                    pendingFilesList.Items.RemoveAt(i);                    
+                    rowIndex = i;                    
                     break;
                 }
             }
+
+            for (int i = rowIndex; i < pendingFilesList.Items.Count; i++)
+            {
+                var rowInfo = (FileListRowTag)pendingFilesList.Items[i].Tag;
+                rowInfo.listIndex--;
+                fileIdToListIndex[rowInfo.fileId]--;
+            }
+
             fileIdToListIndex.Remove(id);
+            pendingFilesList.Items.RemoveAt(rowIndex);
         }
 
         public void ModifyFileListItem(int id, string downloadedSize, string speed, string progress, string status)
         {
-            var listItem = pendingFilesList.Items[fileIdToListIndex[id]];
-            listItem.SubItems[2].Text = downloadedSize;
-            listItem.SubItems[3].Text = speed;
-            listItem.SubItems[4].Text = progress;
-            listItem.SubItems[5].Text = status;
+                var listItem = pendingFilesList.Items[fileIdToListIndex[id]];
+                listItem.SubItems[2].Text = downloadedSize;
+                listItem.SubItems[3].Text = speed;
+                listItem.SubItems[4].Text = progress;
+                listItem.SubItems[5].Text = status;
         }
 
         public void SetStatus(string message)
@@ -146,8 +166,6 @@ namespace puller_gui
             presenter_.AddFile(newFileTextBox.Text);
         }
 
-        Presenters.MainFormPresenter presenter_ = null;
-
         private void startButton_Click(object sender, EventArgs e)
         {
             presenter_.StartDownload();
@@ -167,9 +185,12 @@ namespace puller_gui
         {
             foreach (ListViewItem item in pendingFilesList.SelectedItems)
             {
-                presenter_.RemoveFile((int)item.Tag);
+                var rowInfo = (FileListRowTag)item.Tag;
+                presenter_.RemoveFile(rowInfo.fileId);
             }
         }
+
+        Presenters.IMainFormPresenter presenter_;
 
         Dictionary<int, int> fileIdToListIndex = new Dictionary<int, int>();
     }

@@ -39,10 +39,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsyncFileDownloader.cs" />
-    <Compile Include="DowloaderThread.cs" />
+    <Compile Include="AsyncDownloader.cs" />
+    <Compile Include="AsyncDownloaderFactory.cs" />
     <Compile Include="DownloadManager.cs" />
     <Compile Include="FileWrapper.cs" />
+    <Compile Include="IAsyncDownloader.cs" />
+    <Compile Include="IAsyncDownloaderFactory.cs" />
+    <Compile Include="IDownloadManager.cs" />
+    <Compile Include="IFileSystem.cs" />
+    <Compile Include="NativeFileSystem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

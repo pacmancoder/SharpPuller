@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace downloader_lib
 {
-    class DowloaderThread
+    public interface IAsyncDownloaderFactory
     {
+        IAsyncDownloader GetDownloader(string url, string destPath, IFileSystem fileSystem);
     }
 }

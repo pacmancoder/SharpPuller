@@ -1,29 +1,36 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using UtilsLib;
 
 namespace downloader_lib
 {
-    public class DownloadManager
+    public class DownloadManager : IDownloadManager
     {
-        private string downloadFolder_;
 
-        private Dictionary<int, FileWrapper> files_;
-        private int nextId_;
-
-        public DownloadManager()
+        public DownloadManager(
+            IAsyncDownloaderFactory downloaderFactory,
+            IFileSystem fileSystem)
         {
-            // Get user's downloads folder path
-            downloadFolder_ = Registry.GetValue(
-                @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
-                "{374DE290-123F-4565-9164-39C4925E467B}", "Downloads").ToString();
-            nextId_ = 0;
-            files_ = new Dictionary<int, FileWrapper>();
+            downloaderFactory_ = downloaderFactory;
+            fileSystem_ = fileSystem;
+        }
+
+        public string DownloadsFolder
+        {
+            get
+            {
+                if (downloadsFolder_ == null)
+                {
+                    throw new InvalidOperationException("Downloads folder for download manager is not set");
+                }
+                return downloadsFolder_;
+            }
+            set
+            {
+                downloadsFolder_ = value;
+            }
         }
 
         private bool FileAlreadyAdded(string url)
@@ -42,51 +49,23 @@ namespace downloader_lib
         {
             if (FileAlreadyAdded(url))
             {
-                // TODO: specific exception
-                throw new ApplicationException("File already added!");
+                throw new InvalidOperationException($"File with url {url} already added!");
             }
+            
+            string filePath = Utils.GenerateUniqueFileName(
+                downloadsFolder_ + "\\" + Utils.ExtractFileNameFromUrl(url));
+            
+            files_.Add(nextId_, new FileWrapper(
+                downloaderFactory_.GetDownloader(url, filePath, fileSystem_),
+                fileSystem_));
 
-            string defaultPath = downloadFolder_ + "\\" + Utils.ExtractFileName(url, "/");
-            // TODO: check filename for incorrect symbols, replace with underscores !!!
-            string resultPath = defaultPath;
-            int fileSuffix = 1;
-            while (System.IO.File.Exists(resultPath))
-            {
-                int separatorPos;
-                if (defaultPath.LastIndexOf('.') > defaultPath.LastIndexOf('\\'))
-                {
-                    separatorPos = defaultPath.LastIndexOf('.');
-                }
-                else
-                {
-                    separatorPos = defaultPath.Length - 1;
-                }
-
-                resultPath = 
-                    defaultPath.Substring(0, separatorPos) +
-                    $" ({fileSuffix})" +
-                    defaultPath.Substring(separatorPos, defaultPath.Length - separatorPos);
-            }
-
-
-            files_.Add(nextId_, new FileWrapper(url, resultPath));
             return nextId_++;
         }
 
         public void RemoveFile(int fileId)
         {
-            // files_[fileId].StopDownload();
+            files_[fileId].PauseDownload(PauseType.Forced);
             files_.Remove(fileId);
-        }
-
-        public double GetOverallProgress()
-        {
-            double overallProgress = 0;
-            foreach(var file in files_)
-            {
-                overallProgress += file.Value.Progress;
-            }
-            return overallProgress / files_.Count;
         }
 
         public string GetFileName(int id)
@@ -132,6 +111,16 @@ namespace downloader_lib
             return "Unknown";
         }
 
+        public long GetFileDownloadSpeed(int id)
+        {
+            return files_[id].DownloadSpeed;
+        }
+
+        public double GetFileProgress(int id)
+        {
+            return files_[id].Progress;
+        }
+
         public void StartDownload()
         {
             foreach(var file in files_)
@@ -143,7 +132,7 @@ namespace downloader_lib
         {
             foreach (var file in files_)
             {
-                file.Value.PauseDownload();
+                file.Value.PauseDownload(PauseType.Relaxed);
             }
         }
 
@@ -162,24 +151,68 @@ namespace downloader_lib
             }
         }
 
-        public List<int> GetFileIdList()
+        public double OverallProgress
         {
-            var list = new List<int>();
-            foreach (var file in files_)
+            get
             {
-                list.Add(file.Key);
+                if (files_.Count == 0)
+                {
+                    return 1.0;
+                }
+
+                long sizeSum = 0;
+                foreach (var file in files_)
+                {
+                    sizeSum += file.Value.Size;
+                }
+
+                double progressSum = 0;
+                if (sizeSum != 0)
+                {
+                    foreach (var file in files_)
+                    {
+                        progressSum += (file.Value.Progress * file.Value.Size) / sizeSum;
+                    }
+                }
+                if (progressSum > 1.0)
+                {
+                    return 1.0;
+                }
+                else
+                {
+                    return progressSum / files_.Count;
+                }
             }
-            return list;
         }
 
-        public long GetFileDownloadSpeed(int id)
+        public List<int> FileIdList
         {
-            return files_[id].DownloadSpeed;
+            get
+            {
+                return files_.Keys.ToList();
+            }
         }
 
-        public double GetFileProgress(int id)
+        #region private properties
+
+        private int NextId
         {
-            return files_[id].Progress;
+            get => nextId_++;
         }
+
+        #endregion
+
+        #region private fields
+
+        IAsyncDownloaderFactory downloaderFactory_;
+        IFileSystem fileSystem_;
+
+        private Dictionary<int, FileWrapper> files_ = new Dictionary<int, FileWrapper>();
+        private int nextId_ = 0;
+        private string downloadsFolder_ = null;
+
+
+
+        #endregion
     }
 }
