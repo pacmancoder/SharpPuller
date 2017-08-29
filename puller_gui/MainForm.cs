@@ -163,7 +163,10 @@ namespace puller_gui
 
         private void addFileButton_Click(object sender, EventArgs e)
         {
-            presenter_.AddFile(newFileTextBox.Text);
+            var urls = newFileTextBox.Text.Split(
+                new string[] { Environment.NewLine },
+                StringSplitOptions.RemoveEmptyEntries);
+            presenter_.AddFiles(urls);
         }
 
         private void startButton_Click(object sender, EventArgs e)
@@ -190,8 +193,21 @@ namespace puller_gui
             }
         }
 
-        Presenters.IMainFormPresenter presenter_;
+        private void showInFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            foreach (ListViewItem item in pendingFilesList.SelectedItems)
+            {
+                var rowInfo = (FileListRowTag)item.Tag;
+                presenter_.ShowFileInFolder(rowInfo.fileId);
+            }
+        }
+    
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            presenter_.OnClosing();
+        }
 
+        Presenters.IMainFormPresenter presenter_;
         Dictionary<int, int> fileIdToListIndex = new Dictionary<int, int>();
     }
 }

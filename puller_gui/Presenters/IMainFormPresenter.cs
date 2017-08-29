@@ -9,8 +9,10 @@ namespace puller_gui.Presenters
     public interface IMainFormPresenter
     {
         void HookView(Views.IMainFormView view);
-        void AddFile(string url);
+        void OnClosing();
+        void AddFiles(string[] urls);
         void RemoveFile(int fileId);
+        void ShowFileInFolder(int fileId);
         void StartDownload();
         void PauseDownload();
         void CheckProgress();

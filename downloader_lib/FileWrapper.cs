@@ -24,20 +24,20 @@ namespace downloader_lib
         private string url_;
         private string name_;
 
-        string tempLocalPath;
+        string curentLocalPath;
         string localPath;
 
         IAsyncDownloader downloader_;
         IFileSystem fileSystem_;
 
-        public FileWrapper(IAsyncDownloader downloader, IFileSystem fileSystem)
+        public FileWrapper(string url, string destPath, IAsyncDownloaderFactory downloaderFactory, IFileSystem fileSystem)
         {
-            url_ = downloader.Url;
-            localPath = downloader.DestPath;
-            tempLocalPath = localPath + tempExtension;
+            url_ = url;
+            localPath = destPath;
+            curentLocalPath = Utils.GenerateUniqueFileName(localPath + tempExtension);
             name_ = Path.GetFileName(localPath);
 
-            downloader_ = downloader;
+            downloader_ = downloaderFactory.GetDownloader(url, curentLocalPath, fileSystem);
             fileSystem_ = fileSystem;
         }
 
@@ -53,14 +53,7 @@ namespace downloader_lib
         {
             get
             {
-                if (Status == FileStatus.DOWNLOADED)
-                {
-                    return localPath;
-                }
-                else
-                {
-                    return tempLocalPath;
-                }
+                return curentLocalPath;
             }
         }
 
@@ -129,9 +122,10 @@ namespace downloader_lib
             {
                 if (downloader_.Finished)
                 {
-                    if (fileSystem_.Exists(tempLocalPath))
+                    if (fileSystem_.Exists(curentLocalPath))
                     {
-                        fileSystem_.Move(tempLocalPath, Utils.GenerateUniqueFileName(localPath));
+                        fileSystem_.Move(curentLocalPath, localPath);
+                        curentLocalPath = localPath;
                     }
 
                     return FileStatus.DOWNLOADED;

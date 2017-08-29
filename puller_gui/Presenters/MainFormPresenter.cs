@@ -12,9 +12,10 @@ namespace puller_gui.Presenters
     class MainFormPresenter : IMainFormPresenter
     {
 
-        public MainFormPresenter(IDownloadManager downloadManager)
+        public MainFormPresenter(IDownloadManager downloadManager, IFileSystem fileSystem)
         {
             downloadManager_ = downloadManager;
+            fileSystem_ = fileSystem;
         }
 
         public void HookView(Views.IMainFormView view)
@@ -22,20 +23,34 @@ namespace puller_gui.Presenters
             view_ = view;
         }
 
-        public void AddFile(string url)
+        public void OnClosing()
         {
-            try
+            downloadManager_.Shutdown();
+        }
+
+        public void AddFiles(string[] urls)
+        {
+            foreach (var url in urls)
             {
-                int fileId = downloadManager_.AddFile(url);
-                view_.AddFileToList(
-                    fileId,
-                    downloadManager_.GetFileName(fileId),
-                    UtilsLib.Utils.GetHumanReadableSize(downloadManager_.GetFileSize(fileId)));
-            }
-            // other errors
-            catch (Exception e)
-            {
-                view_.ShowError("Error on adding file", e.Message);
+                try
+                {
+                    int fileId = downloadManager_.AddFile(url);
+                    view_.AddFileToList(
+                        fileId,
+                        downloadManager_.GetFileName(fileId),
+                        UtilsLib.Utils.GetHumanReadableSize(downloadManager_.GetFileSize(fileId)));
+                    if (downloadManager_.DownloadInProgress)
+                    {
+                        downloadManager_.StartDownload(fileId);
+                    } else
+                    {
+                        view_.SetButtonState(MainFormButton.Start, true);
+                    }
+                }
+                catch (Exception e) // top-level error handling
+                {
+                    view_.ShowError("Error on adding file", $"File {url}: " + e.Message);
+                }
             }
         }
 
@@ -43,6 +58,16 @@ namespace puller_gui.Presenters
         {
             downloadManager_.RemoveFile(fileId);
             view_.RemoveFileFromList(fileId);
+
+            if (downloadManager_.FilesCount == 0)
+            {
+                view_.SetButtonState(MainFormButton.Start, false);
+            }
+        }
+
+        public void ShowFileInFolder(int fileId)
+        {
+            fileSystem_.ShowFileInFolder(downloadManager_.GetFilePath(fileId));
         }
 
         public void StartDownload()
@@ -94,5 +119,6 @@ namespace puller_gui.Presenters
 
         Views.IMainFormView view_;
         IDownloadManager downloadManager_;
+        IFileSystem fileSystem_;
     }
 }

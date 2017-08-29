@@ -19,6 +19,20 @@ namespace downloader_lib
             return new FileStream(path, FileMode.Append, FileAccess.Write);
         }
 
+        public void ShowFileInFolder(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                return;
+            }
+
+            // combine the arguments together
+            // it doesn't matter if there is a space after ','
+            string argument = "/select, \"" + filePath.Replace('/', '\\') + "\"";
+
+            System.Diagnostics.Process.Start("explorer.exe", argument);
+        }
+
         public void Move(string src, string dest)
         {
             File.Move(src, dest);

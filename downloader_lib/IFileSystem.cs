@@ -6,6 +6,7 @@ namespace downloader_lib
     {
         void Move(string src, string dest);
         bool Exists(string path);
+        void ShowFileInFolder(string path);
         Stream GetOutputStream(string path, bool append);
     }
 }

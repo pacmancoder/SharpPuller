@@ -15,9 +15,11 @@ namespace puller_gui
         {
             DownloadManager downloadManager = new DownloadManager(
                 new AsyncDownloaderFactory(), new NativeFileSystem());
+
             downloadManager.DownloadsFolder = Utils.GetDefaultDownloadsFolder();
+
             Presenters.MainFormPresenter mainFormPresenter = 
-                new Presenters.MainFormPresenter(downloadManager);
+                new Presenters.MainFormPresenter(downloadManager, new NativeFileSystem());
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

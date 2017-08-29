@@ -12,11 +12,12 @@ namespace downloader_lib
         private const int DEFAULT_BLOCK_SIZE = 512;
         private const string REQUEST_METHOD_GET = "GET";
         private const string REQUEST_METHOD_HEAD = "HEAD";
-        private const string REQUEST_AGENT = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)";
+        private const string REQUEST_AGENT = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0";
 
         private volatile bool allowedToRun_ = false;
         private volatile bool downloadInProgress_ = false;
         private volatile bool downloadStarted_ = false;
+        private volatile bool downloadFinished_ = false;
 
         private string url_ = null;
         private string destPath_ = null;
@@ -39,19 +40,8 @@ namespace downloader_lib
             fileSystem_ = fileSystem;
             url_ = url;
             destPath_ = destPath;
-        }
 
-        private int SpeedRingBufferIndex(int index)
-        {
-            return index % TIMESTAMPS_COUNT;
-        }
-
-        private void ValidateHeadResponse(WebResponse response)
-        {
-            if (response.ContentLength < 0)
-            {
-                throw new ApplicationException($"Provided url \"{url_}\" is not a file location");
-            }
+            ValidateResponseHead();
         }
 
         public long DownloadSpeed
@@ -95,14 +85,27 @@ namespace downloader_lib
 
         public long DownloadedSize
         {
-            get => Interlocked.Read(ref downloadedSize_);
-            private set => Interlocked.Exchange(ref downloadedSize_, value);
-        }
-
-        public long FileSize {
             get
             {
-                if (fileSize_ < 0)
+                return Interlocked.Read(ref downloadedSize_);
+            }
+            private set
+            {
+                Interlocked.Exchange(ref downloadedSize_, value);
+            }
+        }
+
+        private class ResponseHeadData
+        {
+            public long contentLength;
+        }
+
+        private ResponseHeadData responseHead_ = null;
+        private ResponseHeadData ResponseHead
+        {
+            get
+            {
+                if (responseHead_ == null)
                 {
                     var request = (HttpWebRequest)WebRequest.Create(url_);
                     request.Method = REQUEST_METHOD_HEAD;
@@ -110,44 +113,65 @@ namespace downloader_lib
 
                     using (var response = request.GetResponse())
                     {
-                        ValidateHeadResponse(response);
-                        fileSize_ = response.ContentLength;
+                        responseHead_ = new ResponseHeadData
+                        {
+                            contentLength = response.ContentLength,
+                        };
                     }
                 }
 
-                return fileSize_;
+                return responseHead_;
+            }
+        }
+
+        public long FileSize {
+            get
+            {
+                return ResponseHead.contentLength;
             }
         }
 
         public bool Finished
         {
-            get => FileSize == DownloadedSize;
+            get
+            {
+                return downloadFinished_;
+            }
         }
 
         public bool DownloadInProgress
         {
-            get => downloadInProgress_;
+            get
+            {
+                return downloadInProgress_;
+            }
         }
 
         public bool DownloadStarted
         {
-            get => downloadStarted_;
+            get
+            {
+                return downloadStarted_;
+            }
         }
 
         public string Url
         {
-            get => url_;
+            get
+            {
+                return url_;
+            }
         }
         public string DestPath
         {
-            get => destPath_;
+            get
+            {
+                return destPath_;
+            }
         }
 
         private void StartInternal(long offset)
         {
-            if (!allowedToRun_)
-                throw new InvalidOperationException();
-
             var request = (HttpWebRequest)WebRequest.Create(url_);
 
             request.Method = REQUEST_METHOD_GET;
@@ -165,14 +189,15 @@ namespace downloader_lib
                             var buffer = new byte[blockSize_];
                             var bytesRead = responseStream.Read(buffer, 0, buffer.Length);
 
-                            if (bytesRead == 0) break;
-
-                            fs.WriteAsync(buffer, 0, bytesRead);
-                            DownloadedSize += bytesRead;
-
-                            if (Finished)
+                            if (bytesRead > 0)
                             {
-                                downloadStarted_ = false;
+                                fs.Write(buffer, 0, bytesRead);
+                                DownloadedSize += bytesRead;
+                            }
+                            else
+                            {
+                                downloadFinished_ = true;
+                                break;
                             }
                         }
 
@@ -185,11 +210,11 @@ namespace downloader_lib
 
         public void Start()
         {
-            if (url_ == null || destPath_ == null)
+            if (currentDownloadTask_ != null && !currentDownloadTask_.IsCompleted)
             {
-                throw new InvalidOperationException(
-                    "Url and Destination Path must be set before download start");
+                return;
             }
+
             allowedToRun_ = true;
             downloadInProgress_ = true;
             downloadStarted_ = true;
@@ -207,6 +232,19 @@ namespace downloader_lib
             if (currentDownloadTask_ != null && !currentDownloadTask_.IsCompleted)
             {
                 currentDownloadTask_.Wait();
+            }
+        }
+
+        private int SpeedRingBufferIndex(int index)
+        {
+            return index % TIMESTAMPS_COUNT;
+        }
+
+        private void ValidateResponseHead()
+        {
+            if (ResponseHead.contentLength < 0)
+            {
+                throw new ApplicationException($"Provided url \"{url_}\" is not a file location");
             }
         }
     }

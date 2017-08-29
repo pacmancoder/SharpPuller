@@ -51,13 +51,11 @@ namespace downloader_lib
             {
                 throw new InvalidOperationException($"File with url {url} already added!");
             }
-            
+
             string filePath = Utils.GenerateUniqueFileName(
                 downloadsFolder_ + "\\" + Utils.ExtractFileNameFromUrl(url));
-            
-            files_.Add(nextId_, new FileWrapper(
-                downloaderFactory_.GetDownloader(url, filePath, fileSystem_),
-                fileSystem_));
+
+            files_.Add(nextId_, new FileWrapper(url, filePath, downloaderFactory_, fileSystem_));
 
             return nextId_++;
         }
@@ -92,21 +90,21 @@ namespace downloader_lib
             switch (files_[id].Status)
             {
                 case FileStatus.READY_TO_DOWNLOAD:
-                {
-                    return "In queue";
-                }
+                    {
+                        return "In queue";
+                    }
                 case FileStatus.IN_PROGRESS:
-                {
-                    return "Downloading";
-                }
+                    {
+                        return "Downloading";
+                    }
                 case FileStatus.PAUSED:
-                {
-                    return "Paused";
-                }
+                    {
+                        return "Paused";
+                    }
                 case FileStatus.DOWNLOADED:
-                {
-                    return "Finished";
-                }
+                    {
+                        return "Finished";
+                    }
             }
             return "Unknown";
         }
@@ -123,7 +121,7 @@ namespace downloader_lib
 
         public void StartDownload()
         {
-            foreach(var file in files_)
+            foreach (var file in files_)
             {
                 file.Value.StartDownload();
             }
@@ -134,6 +132,24 @@ namespace downloader_lib
             {
                 file.Value.PauseDownload(PauseType.Relaxed);
             }
+        }
+
+        public void Shutdown()
+        {
+            foreach (var file in files_)
+            {
+                file.Value.PauseDownload(PauseType.Forced);
+            }
+        }
+
+        public void StartDownload(int id)
+        {
+            files_[id].StartDownload();
+        }
+
+        public void PauseDownload(int id)
+        {
+            files_[id].PauseDownload(PauseType.Relaxed);
         }
 
         public bool AllDownloadsFinished
@@ -148,6 +164,21 @@ namespace downloader_lib
                     }
                 }
                 return true;
+            }
+        }
+
+        public bool DownloadInProgress
+        {
+            get
+            {
+                foreach (var file in files_)
+                {
+                    if (file.Value.Status == FileStatus.IN_PROGRESS)
+                    {
+                        return true;
+                    }
+                }
+                return false;
             }
         }
 
@@ -180,7 +211,7 @@ namespace downloader_lib
                 }
                 else
                 {
-                    return progressSum / files_.Count;
+                    return progressSum;
                 }
             }
         }
@@ -193,11 +224,22 @@ namespace downloader_lib
             }
         }
 
+        public int FilesCount
+        {
+            get
+            {
+                return files_.Keys.Count;
+            }
+        }
+
         #region private properties
 
         private int NextId
         {
-            get => nextId_++;
+            get
+            {
+                return nextId_++;
+            }
         }
 
         #endregion
